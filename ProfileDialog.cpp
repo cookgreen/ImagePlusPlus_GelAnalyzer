@@ -229,16 +229,16 @@ void ProfileDialog::applyWandTool(const QPoint& clickPos) {
 
     const auto& bestContour = contours[largestIdx];
 
-    double pixelCount = cv::countNonZero(maskROI);
+    double pixelCount = cv::contourArea(bestContour);
 
     double perimeter = cv::arcLength(bestContour, true);
 
     double rawArea = pixelCount + perimeter / 2.0;
 
     int ijPlotWidth = m_pixelsAveraged; // 对应 firstRect.width
-    if (ijPlotWidth < 650) ijPlotWidth = 650;
+    if (ijPlotWidth < 999) ijPlotWidth = 999;
     int ijPlotHeight = ijPlotWidth / 2;
-    if (ijPlotHeight < 250) ijPlotHeight = 250;
+    if (ijPlotHeight < 517) ijPlotHeight = 517;
 
     double dataPoints = static_cast<double>(m_profiles[0].size() - 1);
     if (dataPoints <= 0) dataPoints = 1.0;
@@ -263,7 +263,7 @@ void ProfileDialog::applyWandTool(const QPoint& clickPos) {
 
     double realArea = rawArea * calPixelWidth * calPixelHeight;
 
-    // 2. 计算轮廓的“质心”(Center of Mass)，用于在波峰正中心画上数字
+    // 计算轮廓的“质心”(Center of Mass)，用于在波峰正中心画上数字
     cv::Moments M = cv::moments(bestContour);
     int cx = 0, cy = 0;
     if (M.m00 != 0) { // 避免除以 0
@@ -271,7 +271,7 @@ void ProfileDialog::applyWandTool(const QPoint& clickPos) {
         cy = static_cast<int>(M.m01 / M.m00);
     }
 
-    // 5. 转换为 Qt 的 QPolygon 进行绘制
+    // 转换为 Qt 的 QPolygon 进行绘制
     QPolygon poly;
     for (const auto& pt : bestContour) {
         poly << QPoint(pt.x, pt.y);
