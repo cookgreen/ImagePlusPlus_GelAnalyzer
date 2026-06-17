@@ -27,7 +27,7 @@ private:
     LaneGraphicsView *view;
     QGraphicsScene *scene;
     QList<QGraphicsRectItem*> lanes; // 保存泳道矩形
-    cv::Mat cvImage;                 // OpenCV 原图（灰度）
+    cv::Mat cvImage;                 // OpenCV 原图
     QImage qtImage;                  // Qt 显示用图
     double odMin;
     double odMax;

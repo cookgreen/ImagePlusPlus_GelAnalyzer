@@ -17,9 +17,8 @@ ProfileDialog::ProfileDialog(const std::vector<std::vector<double>> &profiles,
     setMinimumSize(650, 400);
     resize(800, 500);
 
-    // 1. 初始化工具栏
     m_toolBar = new QToolBar(this);
-    m_toolBar->move(0, 0); // 固定在顶部
+    m_toolBar->move(0, 0);
 
     m_actionLine = m_toolBar->addAction("Straight Line");
     m_actionWand = m_toolBar->addAction("Wand Tool");
@@ -80,7 +79,6 @@ void ProfileDialog::paintEvent(QPaintEvent *) {
     for (int i = 0; i < m_peaks.size(); ++i) {
         const PeakInfo& peak = m_peaks[i];
 
-        // 2. 在质心位置画出面积和编号
         p.setPen(Qt::black);
         p.setFont(QFont("Arial", 10, QFont::Bold));
 
@@ -110,7 +108,6 @@ void ProfileDialog::paintEvent(QPaintEvent *) {
     p.restore();
 }
 
-// 核心数据绘制分离，为了供屏幕显示和 OpenCV 掩码提取共同调用
 void ProfileDialog::drawPlotContent(QPainter *p, int width, int height) {
     int nLanes = static_cast<int>(m_profiles.size());
     int laneHeight = height / nLanes;
@@ -148,8 +145,6 @@ void ProfileDialog::drawPlotContent(QPainter *p, int width, int height) {
     }
 }
 
-// ----------------- 鼠标交互事件 -----------------
-
 void ProfileDialog::mousePressEvent(QMouseEvent *event) {
     if (event->button() == Qt::LeftButton) {
         // 映射到绘图区坐标
@@ -183,32 +178,30 @@ void ProfileDialog::mouseReleaseEvent(QMouseEvent *event) {
     }
 }
 
-// ----------------- OpenCV 魔法：魔棒工具 -----------------
-
 void ProfileDialog::applyWandTool(const QPoint& clickPos) {
     int w = width() - leftMargin - rightMargin;
     int h = height() - topMargin - bottomMargin;
     if (w <= 0 || h <= 0 || clickPos.x() < 0 || clickPos.x() >= w || clickPos.y() < 0 || clickPos.y() >= h)
         return;
 
-    // 1. 在内存中生成一张用于分析的二值化图像 (白底黑线)
+    // 在内存中生成一张用于分析的二值化图像
     QImage maskImg(w, h, QImage::Format_Grayscale8);
     maskImg.fill(Qt::white);
     QPainter p(&maskImg);
     drawPlotContent(&p, w, h);
     p.end();
 
-    // 2. 将 QImage 转为 OpenCV 的 Mat (避免拷贝)
+    // 将 QImage 转为 OpenCV 的 Mat
     cv::Mat mat(h, w, CV_8UC1, maskImg.bits(), maskImg.bytesPerLine());
 
     // 如果用户直接点在了黑线上，无视
     if (mat.at<uchar>(clickPos.y(), clickPos.x()) == 0) return;
 
-    // 3. 使用 cv::floodFill 提取连通区域掩码
+    // 使用 cv::floodFill 提取连通区域掩码
     // OpenCV 要求 mask 尺寸比原图大 2 个像素
     cv::Mat mask = cv::Mat::zeros(h + 2, w + 2, CV_8UC1);
 
-    // floodFill 标志：填充值设为 255 (写入mask)，并只返回掩码
+    // floodFill 标志：填充值设为 255
     int flags = 4 | (255 << 8) | cv::FLOODFILL_MASK_ONLY;
     cv::Rect boundingBox;
     cv::floodFill(mat, mask, cv::Point(clickPos.x(), clickPos.y()),
@@ -219,8 +212,7 @@ void ProfileDialog::applyWandTool(const QPoint& clickPos) {
         return;
     }
 
-    // 4. 使用 cv::findContours 从掩码中提取多边形边界
-    // 裁剪掉扩大的 1px 边界，恢复真实坐标
+    // 使用 cv::findContours 从掩码中提取多边形边界
     cv::Mat maskROI = mask(cv::Rect(1, 1, w, h));
 
     std::vector<std::vector<cv::Point>> contours;
@@ -237,18 +229,12 @@ void ProfileDialog::applyWandTool(const QPoint& clickPos) {
 
     const auto& bestContour = contours[largestIdx];
 
-
-
-    double pixelCount = cv::contourArea(bestContour);
+    double pixelCount = cv::countNonZero(maskROI);
 
     double perimeter = cv::arcLength(bestContour, true);
 
-    // 完美复刻 ImageJ 的边界补偿算法
     double rawArea = pixelCount + perimeter / 2.0;
 
-    // ==========================================
-    // 2. 获取校准比例 (完美对齐 cal.pixelWidth * cal.pixelHeight)
-    // ==========================================
     int ijPlotWidth = m_pixelsAveraged; // 对应 firstRect.width
     if (ijPlotWidth < 650) ijPlotWidth = 650;
     int ijPlotHeight = ijPlotWidth / 2;
@@ -275,9 +261,6 @@ void ProfileDialog::applyWandTool(const QPoint& clickPos) {
     double calPixelWidth = ijXScale / qtXScale;
     double calPixelHeight = ijYScale / qtYScale;
 
-    // ==========================================
-    // 3. 最终校准面积
-    // ==========================================
     double realArea = rawArea * calPixelWidth * calPixelHeight;
 
     // 2. 计算轮廓的“质心”(Center of Mass)，用于在波峰正中心画上数字
@@ -294,12 +277,6 @@ void ProfileDialog::applyWandTool(const QPoint& clickPos) {
         poly << QPoint(pt.x, pt.y);
     }
 
-    m_wandSelections.append(poly);
-
-    // TODO: 这里可以直接通过 cv::contourArea(contours[largestIdx])
-    // 或者统计 maskROI 中的白色像素个数，计算出该波峰的积分面积！
-
-    // 保存波峰信息
     m_peaks.append({poly, realArea, QPoint(cx, cy)});
 
     // 更新 UI
