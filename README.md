@@ -1,9 +1,8 @@
 <p align="center"><img width="80%" height="387" alt="banner" src="https://github.com/user-attachments/assets/64f7f3b3-fd63-4e9e-9c14-97db51150227" /></p>
 
 A C++ implementation of ImageJ based on OpenCV and C++/Qt, which implements its core gel imaging analysis functions.
-
-<img width="1363" height="727" alt="screenshot" src="https://github.com/user-attachments/assets/a096e81f-790e-4b38-9142-f689407b1921" />
-
+  
+<img width="996" height="721" alt="123" src="https://github.com/user-attachments/assets/6776a013-9809-49b8-b8cb-43a7cb1a2df8" />
 
 ## Implemented features
 * ROI selection and drawing the correct peak map
