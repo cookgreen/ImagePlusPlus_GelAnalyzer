@@ -18,18 +18,13 @@ LaneGraphicsView::LaneGraphicsView(QGraphicsScene *scene, QWidget *parent)
 }
 
 void LaneGraphicsView::mousePressEvent(QMouseEvent *event) {
-    if (event->modifiers() & Qt::ControlModifier) {
-        // Ctrl+左键开始画矩形
-        if (event->button() == Qt::LeftButton) {
-            drawing = true;
-            startPoint = mapToScene(event->pos());
-            tempRect = new QGraphicsRectItem(QRectF(startPoint, QSizeF(0,0)));
-            tempRect->setPen(QPen(Qt::green, 2));
-            scene()->addItem(tempRect);
-            setDragMode(QGraphicsView::NoDrag); // 禁止平移
-        }
-    } else {
-        QGraphicsView::mousePressEvent(event); // 正常平移
+    if (event->button() == Qt::LeftButton) {
+        drawing = true;
+        startPoint = mapToScene(event->pos());
+        tempRect = new QGraphicsRectItem(QRectF(startPoint, QSizeF(0,0)));
+        tempRect->setPen(QPen(Qt::green, 2));
+        scene()->addItem(tempRect);
+        setDragMode(QGraphicsView::NoDrag);
     }
 }
 

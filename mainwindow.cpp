@@ -85,11 +85,9 @@ void MainWindow::analyze() {
     std::vector<cv::Rect> roi_list;
     for (const QGraphicsRectItem *item : lanes) {
         QRectF rf = item->rect();
-
         cv::Rect cvRoi(rf.x(), rf.y(), rf.width(), rf.height());
 
         bool averageHorizontally = (cvRoi.height > cvRoi.width);
-
         pixelsAveraged = averageHorizontally ? cvRoi.width : cvRoi.height;
 
         roi_list.push_back(cvRoi);
